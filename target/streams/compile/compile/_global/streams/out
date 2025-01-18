@@ -1,0 +1,4 @@
+[0m[[0m[31merror[0m] [0m[0m/home/meowwww-2410/Desktop/RV32F/src/main/scala/Pipeline/Main.scala:144:21: value ID_EX_emRead is not a member of chisel3.Bundle{val IF_ID_inst: chisel3.UInt; val ID_EX_memRead: chisel3.Bool; val ID_EX_rd: chisel3.UInt; val pc_in: chisel3.SInt; val current_pc: chisel3.SInt; val inst_forward: chisel3.Bool; val pc_forward: chisel3.Bool; val ctrl_forward: chisel3.Bool; val inst_out: chisel3.UInt; val pc_out: chisel3.SInt; val current_pc_out: chisel3.SInt}[0m
+[0m[[0m[31merror[0m] [0m[0m    HazardDetect.io.ID_EX_emRead := ID_EX_.io.ctrl_MemRd_out[0m
+[0m[[0m[31merror[0m] [0m[0m                    ^[0m
+[0m[[0m[31merror[0m] [0m[0mone error found[0m
