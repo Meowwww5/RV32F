@@ -103,6 +103,7 @@ class FPU extends Module{
       val exp_update = Mux(result_frac(47), 1.U, 0.U)
       // add the exponents
       val result_exp = rs1_exp + rs2_exp + exp_update - 127.U
+      //???
     }
     is(FPU_FDIV_S) {
       //result := io.in_A / io.in_B
