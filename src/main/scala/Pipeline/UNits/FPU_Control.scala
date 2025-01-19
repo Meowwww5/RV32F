@@ -4,8 +4,6 @@ package Pipeline
 import chisel3._
 import chisel3.util._
 
-obje
-
 class FPU_Control extends Module {
   val io = IO(new Bundle {
     val fpu_op = Input(UInt(5.W))
