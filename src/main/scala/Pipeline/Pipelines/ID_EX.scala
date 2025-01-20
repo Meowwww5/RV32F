@@ -68,3 +68,4 @@ class ID_EX extends Module {
   io.ctrl_nextpc_out    :=  RegNext(io.ctrl_nextpc_in)
   io.IFID_pc4_out       :=  RegNext(io.IFID_pc4_in)
 }
+//0120: rs3
