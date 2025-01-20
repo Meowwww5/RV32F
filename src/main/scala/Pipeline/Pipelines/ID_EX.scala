@@ -49,8 +49,10 @@ class ID_EX extends Module {
 
   io.rs1_out            :=  RegNext(io.rs1_in)
   io.rs2_out            :=  RegNext(io.rs2_in)
+  io.rs3_out            :=  RegNext(io.rs3_in)
   io.rs1_data_out       :=  RegNext(io.rs1_data_in)
   io.rs2_data_out       :=  RegNext(io.rs2_data_in)
+  io.rs3_data_out       :=  RegNext(io.rs3_data_in)
   io.imm_out            :=  RegNext(io.imm)
   io.rd_out             :=  RegNext(io.rd_in)
   io.func3_out          :=  RegNext(io.func3_in)
