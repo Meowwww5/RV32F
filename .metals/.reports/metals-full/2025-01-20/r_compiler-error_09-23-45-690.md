@@ -1,3 +1,16 @@
+file://<WORKSPACE>/src/main/scala/Pipeline/UNits/FPU.scala
+### java.lang.IndexOutOfBoundsException: -1
+
+occurred in the presentation compiler.
+
+presentation compiler configuration:
+
+
+action parameters:
+offset: 3249
+uri: file://<WORKSPACE>/src/main/scala/Pipeline/UNits/FPU.scala
+text:
+```scala
 // for RV32F
 //test_0120
 package Pipeline
@@ -106,8 +119,9 @@ class FPU extends Module{
 
       when(carry) {
         Temp_Mantissa := Temp_Mantissa >> 1
+        result_exp := A_swap()@@
         when(result_exp < 255.U) {
-          result_exp := A_swap(30:23) + 1.U // FADD 是不是沒有寫-KUO
+          result_exp := result_exp + 1.U
         } .otherwise {
           result_exp := 255.U
         }
@@ -199,3 +213,22 @@ fp_mul:
   
 ***NOTICE*** : rounding mode should be considered
  */
+```
+
+
+
+#### Error stacktrace:
+
+```
+scala.collection.LinearSeqOps.apply(LinearSeq.scala:129)
+	scala.collection.LinearSeqOps.apply$(LinearSeq.scala:128)
+	scala.collection.immutable.List.apply(List.scala:79)
+	dotty.tools.dotc.util.Signatures$.applyCallInfo(Signatures.scala:244)
+	dotty.tools.dotc.util.Signatures$.computeSignatureHelp(Signatures.scala:101)
+	dotty.tools.dotc.util.Signatures$.signatureHelp(Signatures.scala:88)
+	dotty.tools.pc.SignatureHelpProvider$.signatureHelp(SignatureHelpProvider.scala:47)
+	dotty.tools.pc.ScalaPresentationCompiler.signatureHelp$$anonfun$1(ScalaPresentationCompiler.scala:422)
+```
+#### Short summary: 
+
+java.lang.IndexOutOfBoundsException: -1
