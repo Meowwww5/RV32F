@@ -46,6 +46,7 @@ class Control extends Module {
       io.operand_B := 0.B
       io.extend := 0.U
       io.next_pc_sel := 0.U
+      io.FPU_en := 0.B
     }
 
     // I type instructions (e.g., immediate operations)
@@ -60,6 +61,7 @@ class Control extends Module {
       io.operand_B := 1.B
       io.extend := 0.U
       io.next_pc_sel := 0.U
+      io.FPU_en := 0.B
     }
 
     // S type instructions (e.g., store operations)
@@ -74,6 +76,7 @@ class Control extends Module {
       io.operand_B := 1.B
       io.extend := 1.U
       io.next_pc_sel := 0.U
+      io.FPU_en := 0.B
     }
 
     // Load instructions (e.g., load data from memory)
@@ -88,6 +91,7 @@ class Control extends Module {
       io.operand_B := 1.B
       io.extend := 0.U
       io.next_pc_sel := 0.U
+      io.FPU_en := 0.B
     }
 
     // SB type instructions (e.g., conditional branch)
@@ -102,6 +106,7 @@ class Control extends Module {
       io.operand_B := 0.B
       io.extend := 0.U
       io.next_pc_sel := 1.U
+      io.FPU_en := 0.B
     }
 
     // UJ type instructions (e.g., jump and link)
@@ -116,6 +121,7 @@ class Control extends Module {
       io.operand_B := 0.B
       io.extend := 0.U
       io.next_pc_sel := 2.U
+      io.FPU_en := 0.B
     }
 
     // Jalr instruction (e.g., jump and link register)
@@ -130,6 +136,7 @@ class Control extends Module {
       io.operand_B := 0.B
       io.extend := 0.U
       io.next_pc_sel := 3.U
+      io.FPU_en := 0.B
     }
 
     // U type (LUI) instructions (e.g., load upper immediate)
@@ -144,6 +151,7 @@ class Control extends Module {
       io.operand_B := 1.B
       io.extend := 2.U
       io.next_pc_sel := 0.U
+      io.FPU_en := 0.B
     }
 
     // U type (AUIPC) instructions (e.g., add immediate to PC)
@@ -158,6 +166,7 @@ class Control extends Module {
       io.operand_B := 1.B
       io.extend := 2.U
       io.next_pc_sel := 0.U
+      io.FPU_en := 0.B
     }
 
     // for RV32F/RV32D
@@ -169,7 +178,7 @@ class Control extends Module {
       io.reg_write := 1.B
       io.men_to_reg := 0.B
       io.FPU_en := 1.B
-      io.FPU_operation := 1.U
+      io.FPU_operation := 0.U
       io.operand_A := 0.U
       io.operand_B := 0.B
       io.extend := 0.U
@@ -179,13 +188,22 @@ class Control extends Module {
     //R4-type instructions
     //fmadd
     is(67.U){
-
+      io.mem_write := 0.B
+      io.branch := 0.B
+      io.mem_read := 0.B
+      io.reg_write := 1.B
+      io.men_to_reg := 0.B
+      io.FPU_en := 1.B
+      io.FPU_operation := 0.U
+      io.operand_A := 0.U
+      io.operand_B := 0.B
+      io.extend := 0.U
+      io.next_pc_sel := 0.U
     }
 
     //I-type instructions
     //flw
     is(7.U){
-
     }
 
     is(115.U){
@@ -194,7 +212,17 @@ class Control extends Module {
 
     //S-type instructions
     is(39.U){
-
+      io.mem_write := 1.B
+      io.branch := 0.B
+      io.mem_read := 0.B
+      io.reg_write := 0.B
+      io.men_to_reg := 0.B
+      io.FPU_operation := 5.U
+      io.operand_A := 0.U
+      io.operand_B := 1.B
+      io.extend := 1.U
+      io.next_pc_sel := 0.U
+      io.FPU_en := 1.B
     }
 
   }

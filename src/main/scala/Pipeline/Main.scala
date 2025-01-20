@@ -32,7 +32,7 @@ class PIPELINE extends Module {
     val JALR                =   Module(new Jalr)
 
     //RV32F, FPU
-    val F_RegFile               =   Module(new F_Reg)
+    val F_RegFile           =   Module(new F_Reg)
     val FPU_Control         =   Module(new FPU_Control)
     dontTouch(FPU_Control.io)
     val FPU                 =   Module(new FPU)
@@ -87,7 +87,7 @@ class PIPELINE extends Module {
     control_module.io.opcode === 99.U,   // SB-type (branch)
     IF_ID_.io.SelectedInstr_out(24, 20), 0.U)
 
-    //RV32F
+    //RV32F reg
     F_RegFile.io.F_rs1 := Mux(
       control_module.io.opcode === 83.U  ||   // R-type
       control_module.io.opcode === 67.U  ||   // fmadd
@@ -102,14 +102,18 @@ class PIPELINE extends Module {
       control_module.io.opcode === 39.U  ||,  // S-type 
       IF_ID_.io.SelectedInstr_out(24, 20), 0.U)
 
-      F_RegFile.io.F_rs3 := Mux(
+    F_RegFile.io.F_rs3 := Mux(
       control_module.io.opcode === 67.U,  // fmadd
       IF_ID_.io.SelectedInstr_out(31, 27), 0.U)
 
-    //RV32F END
-
-    RegFile.io.reg_write := control_module.io.reg_write 
-    
+    //RV32F reg END
+    //RV32F reg write
+    when(control_module.io.FPU_en){
+      F_RegFile.io.reg_write := control_module.io.reg_write
+    }
+    otherwise{
+      RegFile.io.reg_write := control_module.io.reg_write 
+    }
     val ImmValue = MuxLookup (control_module.io.extend, 0.S, Array (
         (0.U) -> ImmGen.io.I_type,
         (1.U) -> ImmGen.io.S_type,
@@ -253,13 +257,17 @@ class PIPELINE extends Module {
         }
     }
     // ID_EX PIPELINE
-    ID_EX_.io.rs1_in            := RegFile.io.rs1
-    ID_EX_.io.rs2_in            := RegFile.io.rs2
+    //RV32F, F_reg
+    ID_EX_.io.rs1_in := Mux(control_module.io.FPU_en, F_RegFile.io.F_rs1, RegFile.io.rs1)
+    ID_EX_.io.rs2_in := Mux(control_module.io.FPU_en, F_RegFile.io.F_rs2, RegFile.io.rs2)
+    ID_EX_.io.rs3_in := Mux(control_module.io.FPU_en, F_RegFile.io.F_rs3, 0.U)
+    //ID_EX_.io.rs1_in            := RegFile.io.rs1
+    //ID_EX_.io.rs2_in            := RegFile.io.rs2
     ID_EX_.io.imm               := ImmValue 
     ID_EX_.io.func3_in          := IF_ID_.io.SelectedInstr_out(14, 12)
     ID_EX_.io.func7_in          := IF_ID_.io.SelectedInstr_out(30)
     ID_EX_.io.rd_in             := IF_ID_.io.SelectedInstr_out(11, 7)
-
+//simulink
     ALU_Control.io.aluOp            := ID_EX_.io.ctrl_AluOp_out     // Alu op code
     ALU.io.alu_Op                   := ALU_Control.io.out           // Alu op code
     ALU_Control.io.func3            := ID_EX_.io.func3_out          // function 3
