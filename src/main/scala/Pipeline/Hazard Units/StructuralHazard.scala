@@ -11,6 +11,9 @@ class StructuralHazard extends Module {
     val MEM_WB_Rd = Input(UInt(5.W))
     val fwd_rs1 = Output(Bool())
     val fwd_rs2 = Output(Bool())
+    //RV32F rs3
+    val rs3 = Input(UInt(5.W))
+    val fwd_rs3 = Output(Bool())
   })
 
   // Determine if forwarding is needed for rs1
@@ -25,5 +28,12 @@ class StructuralHazard extends Module {
     io.fwd_rs2 := true.B
   }.otherwise {
     io.fwd_rs2 := false.B
+  }
+
+  // Determine if forwarding is needed for rs3
+  when(io.MEM_WB_regWr && io.MEM_WB_Rd === io.rs3) {
+    io.fwd_rs3 := true.B
+  }.otherwise {
+    io.fwd_rs3 := false.B
   }
 }
