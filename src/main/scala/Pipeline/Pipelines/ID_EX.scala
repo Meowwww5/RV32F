@@ -6,8 +6,10 @@ class ID_EX extends Module {
   val io = IO(new Bundle {
     val rs1_in              = Input(UInt(5.W))
     val rs2_in              = Input(UInt(5.W))
+    val rs3_in              = Input(UInt(5.W))
     val rs1_data_in         = Input(SInt(32.W))
     val rs2_data_in         = Input(SInt(32.W))
+    val rs3_data_in         = Input(SInt(32.W))
     val imm                 = Input(SInt(32.W))
     val rd_in               = Input(UInt(5.W))
     val func3_in            = Input(UInt(3.W))
@@ -25,8 +27,10 @@ class ID_EX extends Module {
 
     val rs1_out             = Output(UInt(5.W))
     val rs2_out             = Output(UInt(5.W))
+    val rs3_out             = Output(UInt(5.W))
     val rs1_data_out        = Output(SInt(32.W))
     val rs2_data_out        = Output(SInt(32.W))
+    val rs3_data_out        = Output(SInt(32.W))
     val rd_out              = Output(UInt(5.W))
     val imm_out             = Output(SInt(32.W))
     val func3_out           = Output(UInt(3.W))
