@@ -2,11 +2,12 @@ package Pipeline
 
 import chisel3._
 import chisel3.util._
-
+//add rs3?
 class Forwarding extends Module {
     val io = IO(new Bundle {
         val IDEX_rs1 = Input(UInt(5.W))
         val IDEX_rs2 = Input(UInt(5.W))
+        val IDEX_rs3 = Input(UInt(5.W))
         val EXMEM_rd = Input(UInt(5.W))
         val EXMEM_regWr = Input(UInt(1.W))
         val MEMWB_rd = Input(UInt(5.W))
@@ -48,4 +49,7 @@ class Forwarding extends Module {
             ~(io.EXMEM_regWr === "b1".U && io.EXMEM_rd =/= "b00000".U && (io.EXMEM_rd === io.IDEX_rs1))){
         io.forward_a := "b01".U
         }
+    
 }
+
+//Q: rs3??

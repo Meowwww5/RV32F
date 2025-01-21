@@ -20,12 +20,18 @@ class ID_EX extends Module {
     val ctrl_Reg_W_in       = Input(Bool())
     val ctrl_MemToReg_in    = Input(Bool())
     val ctrl_AluOp_in       = Input(UInt(3.W))
-    //fpu
+    //RV32F
     val ctrl_FPU_en_in      = Input(Bool())
     val ctrl_FPU_Op_in      = Input(UInt(3.W))
+    val FPU_func7_in        = Input(UInt(5.W))
+    val FPU_fmt_in          = Input(UInt(2.W))
+    val FPU_op5_in          = Input(UInt(5.W))
     //
     val ctrl_OpA_in         = Input(UInt(2.W))
     val ctrl_OpB_in         = Input(Bool())
+    //RV32F opc
+    val ctrl_OpC_in         = Input(Bool())
+    //
     val ctrl_nextpc_in      = Input(UInt(2.W))
     val IFID_pc4_in         = Input(UInt(32.W))
 
@@ -45,12 +51,18 @@ class ID_EX extends Module {
     val ctrl_Reg_W_out      = Output(Bool())
     val ctrl_MemToReg_out   = Output(Bool())
     val ctrl_AluOp_out      = Output(UInt(3.W))
-    //fpu
+    //RV32F
     val ctrl_FPU_en_out     = Output(Bool())
     val ctrl_FPU_Op_out     = Output(UInt(3.W))
+    val FPU_func7_out       = Output(UInt(5.W))
+    val FPU_fmt_out         = Output(UInt(2.W))
+    val FPU_op5_out         = Output(UInt(5.W))
     //
     val ctrl_OpA_out        = Output(UInt(2.W))
     val ctrl_OpB_out        = Output(Bool())
+    //RV32F opc
+    val ctrl_OpC_out        = Output(Bool())
+    //
     val ctrl_nextpc_out     = Output(UInt(2.W))
     val IFID_pc4_out        = Output(UInt(32.W))
   })
@@ -74,9 +86,13 @@ class ID_EX extends Module {
   //fpu
   io.ctrl_FPU_en_out    :=  RegNext(io.ctrl_FPU_en_in)
   io.ctrl_FPU_Op_out    :=  RegNext(io.ctrl_FPU_Op_in)
+  io.FPU_func7_out      :=  RegNext(io.FPU_func7_in)
+  io.FPU_fmt_out        :=  RegNext(io.FPU_fmt_in)
+  io.FPU_op5_out        :=  RegNext(io.FPU_op5_in)
   //
   io.ctrl_OpA_out       :=  RegNext(io.ctrl_OpA_in)
   io.ctrl_OpB_out       :=  RegNext(io.ctrl_OpB_in)
+  io.ctrl_OpC_out       :=  RegNext(io.ctrl_OpC_in)
   io.ctrl_nextpc_out    :=  RegNext(io.ctrl_nextpc_in)
   io.IFID_pc4_out       :=  RegNext(io.IFID_pc4_in)
 }
