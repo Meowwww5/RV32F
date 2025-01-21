@@ -293,7 +293,6 @@ class PIPELINE extends Module {
     ID_EX_.io.FPU_func7_in      := IF_ID_.io.SelectedInstr_out(31, 27)
     ID_EX_.io.FPU_fmt_in        := IF_ID_.io.SelectedInstr_out(26, 25)
     ID_EX_.io.FPU_op5_in        := IF_ID_.io.SelectedInstr_out(6, 2)
-//simulink
 
     EX_MEM_M.io.IDEX_rd         := ID_EX_.io.rd_out
     //FPU
@@ -321,39 +320,68 @@ class PIPELINE extends Module {
     ID_EX_.io.IFID_pc4_in := IF_ID_.io.pc4_out      // pc+4 from Decode to execute
     
     val d = Wire(SInt(32.W))
-
+    //RV32F rs1~rs3 forwarding
     when (ID_EX_.io.ctrl_OpA_out === "b01".U) {
       ALU.io.in_A := ID_EX_.io.IFID_pc4_out.asSInt
     }.otherwise {
         // forwarding A
         when(Forwarding.io.forward_a === "b00".U) {
             ALU.io.in_A := ID_EX_.io.rs1_data_out
-        }.elsewhen(Forwarding.io.forward_a === "b01".U) {
+        }.elsewhen(Forwarding.io.forward_a === "b01".U && ID_EX_.io.ctrl_FPU_en_out === 0.U) {
             ALU.io.in_A := d
+        }.elsewhen(Forwarding.io.forward_a === "b01".U && ID_EX_.io.ctrl_FPU_en_out === 1.U) {
+            FPU.io.in_A := d
         }.elsewhen(Forwarding.io.forward_a === "b10".U) {
             ALU.io.in_A := EX_MEM_M.io.EXMEM_alu_out
+            FPU.io.in_A := EX_MEM_M.io.EXMEM_fpu_out //?
         }.otherwise {
             ALU.io.in_A := ID_EX_.io.rs1_data_out
         }
       }
-        // forwarding B
+    // forwarding B
     val RS2_value = Wire(SInt(32.W)) 
     when (Forwarding.io.forward_b === 0.U) {
       RS2_value := ID_EX_.io.rs2_data_out
     }.elsewhen (Forwarding.io.forward_b === 1.U) {
       RS2_value := d
-    }.elsewhen (Forwarding.io.forward_b === 2.U) {
+    }.elsewhen (Forwarding.io.forward_b === 2.U && ID_EX_.io.ctrl_FPU_en_out === 0.U) {
       RS2_value := EX_MEM_M.io.EXMEM_alu_out
+    }.elsewhen (Forwarding.io.forward_b === 2.U && ID_EX_.io.ctrl_FPU_en_out === 1.U) {
+      RS2_value := EX_MEM_M.io.EXMEM_fpu_out
     }.otherwise {
       RS2_value := 0.S
     }
-    when (ID_EX_.io.ctrl_OpB_out === 0.U) {
-      ALU.io.in_B   := RS2_value
-    }.otherwise {
-      ALU.io.in_B   := ID_EX_.io.imm_out
-    }
-    //forwarding c for RV32F R4
 
+    when (ID_EX_.io.ctrl_OpB_out === 0.U) {
+      when(ID_EX_.io.ctrl_FPU_en_out === 0.U){
+        ALU.io.in_B := ID_EX_.io.rs2_data_out
+      }.otherwise{
+        FPU.io.in_B := ID_EX_.io.rs2_data_out
+      }
+    }.otherwise {
+      when(ID_EX_.io.ctrl_FPU_en_out === 0.U){
+        ALU.io.in_B := ID_EX_.io.imm_out
+      }.otherwise{
+        FPU.io.in_B := ID_EX_.io.imm_out
+      }
+    }
+
+    //forwarding c for RV32F R4
+    val RS3_value = Wire(SInt(32.W))
+    when (Forwarding.io.forward_c === 0.U) {
+      RS3_value := ID_EX_.io.rs3_data_out
+    }.elsewhen (Forwarding.io.forward_c === 1.U) {
+      RS3_value := d
+    }.elsewhen (Forwarding.io.forward_c === 2.U) {
+      RS3_value := EX_MEM_M.io.EXMEM_fpu_out
+    }.otherwise {
+      RS3_value := 0.S
+    }
+    when (ID_EX_.io.ctrl_OpC_out === 0.U) {
+      FPU.io.C_data_in:= RS3_value
+    }.otherwise {
+      FPU.io.C_data_in := 0.S
+    }
   
 
     // Execute
