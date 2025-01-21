@@ -11,10 +11,11 @@ class Control extends Module {
     val reg_write = Output(Bool())        // whether a register write
     val men_to_reg = Output(Bool())       // whether the value written to a register (for load instructions)
     val alu_operation = Output(UInt(3.W))
-    val FPU_en = Output(Bool())
-    val FPU_operation = Output(UInt(3.W))
+    val fpu_en = Output(Bool())
+    val fpu_operation = Output(UInt(3.W))
     val operand_A = Output(UInt(2.W))  // Operand A source selection for the ALU
     val operand_B = Output(Bool()) // Operand B source selection for the ALU
+    val operand_C = Output(Bool()) // Operand C source selection for the FPU
 
     // Indicates the type of extension to be used (e.g., sign-extend, zero-extend)
     val extend = Output(UInt(2.W))   
@@ -26,10 +27,11 @@ class Control extends Module {
   io.reg_write := 0.B
   io.men_to_reg := 0.B
   io.alu_operation := 0.U
-  io.FPU_en := 0.B
-  io.FPU_operation := 0.U
+  io.fpu_en := 0.B
+  io.fpu_operation := 0.U
   io.operand_A := 0.U
   io.operand_B := 0.B
+  io.operand_C := 0.B
   io.extend := 0.U
   io.next_pc_sel := 0.U
 
@@ -46,7 +48,7 @@ class Control extends Module {
       io.operand_B := 0.B
       io.extend := 0.U
       io.next_pc_sel := 0.U
-      io.FPU_en := 0.B
+      io.fpu_en := 0.B
     }
 
     // I type instructions (e.g., immediate operations)
@@ -61,7 +63,7 @@ class Control extends Module {
       io.operand_B := 1.B
       io.extend := 0.U
       io.next_pc_sel := 0.U
-      io.FPU_en := 0.B
+      io.fpu_en := 0.B
     }
 
     // S type instructions (e.g., store operations)
@@ -76,7 +78,7 @@ class Control extends Module {
       io.operand_B := 1.B
       io.extend := 1.U
       io.next_pc_sel := 0.U
-      io.FPU_en := 0.B
+      io.fpu_en := 0.B
     }
 
     // Load instructions (e.g., load data from memory)
@@ -89,9 +91,9 @@ class Control extends Module {
       io.alu_operation := 4.U
       io.operand_A := 0.U
       io.operand_B := 1.B
-      io.extend := 0.U
+      io.extend := 0.URS2_value
       io.next_pc_sel := 0.U
-      io.FPU_en := 0.B
+      io.fpu_en := 0.B
     }
 
     // SB type instructions (e.g., conditional branch)
@@ -106,7 +108,7 @@ class Control extends Module {
       io.operand_B := 0.B
       io.extend := 0.U
       io.next_pc_sel := 1.U
-      io.FPU_en := 0.B
+      io.fpu_en := 0.B
     }
 
     // UJ type instructions (e.g., jump and link)
@@ -121,7 +123,7 @@ class Control extends Module {
       io.operand_B := 0.B
       io.extend := 0.U
       io.next_pc_sel := 2.U
-      io.FPU_en := 0.B
+      io.fpu_en := 0.B
     }
 
     // Jalr instruction (e.g., jump and link register)
@@ -136,7 +138,7 @@ class Control extends Module {
       io.operand_B := 0.B
       io.extend := 0.U
       io.next_pc_sel := 3.U
-      io.FPU_en := 0.B
+      io.fpu_en := 0.B
     }
 
     // U type (LUI) instructions (e.g., load upper immediate)
@@ -151,7 +153,7 @@ class Control extends Module {
       io.operand_B := 1.B
       io.extend := 2.U
       io.next_pc_sel := 0.U
-      io.FPU_en := 0.B
+      io.fpu_en := 0.B
     }
 
     // U type (AUIPC) instructions (e.g., add immediate to PC)
@@ -166,7 +168,7 @@ class Control extends Module {
       io.operand_B := 1.B
       io.extend := 2.U
       io.next_pc_sel := 0.U
-      io.FPU_en := 0.B
+      io.fpu_en := 0.B
     }
 
     // for RV32F/RV32D
@@ -177,8 +179,8 @@ class Control extends Module {
       io.mem_read := 0.B
       io.reg_write := 1.B
       io.men_to_reg := 0.B
-      io.FPU_en := 1.B
-      io.FPU_operation := 0.U
+      io.fpu_en := 1.B
+      io.fpu_operation := 0.U
       io.operand_A := 0.U
       io.operand_B := 0.B
       io.extend := 0.U
@@ -193,10 +195,11 @@ class Control extends Module {
       io.mem_read := 0.B
       io.reg_write := 1.B
       io.men_to_reg := 0.B
-      io.FPU_en := 1.B
-      io.FPU_operation := 0.U
+      io.fpu_en := 1.B
+      io.fpu_operation := 0.U
       io.operand_A := 0.U
       io.operand_B := 0.B
+      io.operand_C := 1.B
       io.extend := 0.U
       io.next_pc_sel := 0.U
     }
@@ -217,12 +220,12 @@ class Control extends Module {
       io.mem_read := 0.B
       io.reg_write := 0.B
       io.men_to_reg := 0.B
-      io.FPU_operation := 5.U
+      io.fpu_operation := 5.U
       io.operand_A := 0.U
       io.operand_B := 1.B
       io.extend := 1.U
       io.next_pc_sel := 0.U
-      io.FPU_en := 1.B
+      io.fpu_en := 1.B
     }
 
   }
