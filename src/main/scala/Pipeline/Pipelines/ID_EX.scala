@@ -29,6 +29,9 @@ class ID_EX extends Module {
     //
     val ctrl_OpA_in         = Input(UInt(2.W))
     val ctrl_OpB_in         = Input(Bool())
+    //RV32F opc
+    val ctrl_OpC_in         = Input(Bool())
+    //
     val ctrl_nextpc_in      = Input(UInt(2.W))
     val IFID_pc4_in         = Input(UInt(32.W))
 
@@ -57,6 +60,9 @@ class ID_EX extends Module {
     //
     val ctrl_OpA_out        = Output(UInt(2.W))
     val ctrl_OpB_out        = Output(Bool())
+    //RV32F opc
+    val ctrl_OpC_out        = Output(Bool())
+    //
     val ctrl_nextpc_out     = Output(UInt(2.W))
     val IFID_pc4_out        = Output(UInt(32.W))
   })
@@ -86,6 +92,7 @@ class ID_EX extends Module {
   //
   io.ctrl_OpA_out       :=  RegNext(io.ctrl_OpA_in)
   io.ctrl_OpB_out       :=  RegNext(io.ctrl_OpB_in)
+  io.ctrl_OpC_out       :=  RegNext(io.ctrl_OpC_in)
   io.ctrl_nextpc_out    :=  RegNext(io.ctrl_nextpc_in)
   io.IFID_pc4_out       :=  RegNext(io.IFID_pc4_in)
 }
