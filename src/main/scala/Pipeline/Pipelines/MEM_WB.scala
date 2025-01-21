@@ -11,6 +11,8 @@ class MEM_WB extends Module {
     val EXMEM_rd            = Input(UInt(5.W))
     val in_dataMem_out      = Input(SInt(32.W))
     val in_alu_out          = Input(SInt(32.W))
+    //RV32F
+    val in_fpu_out          = Input(SInt(32.W))
 
     val MEMWB_memToReg_out  = Output(Bool())
     val MEMWB_reg_w_out     = Output(Bool())
@@ -18,6 +20,8 @@ class MEM_WB extends Module {
     val MEMWB_rd_out        = Output(UInt(5.W))
     val MEMWB_dataMem_out   = Output(SInt(32.W))
     val MEMWB_alu_out       = Output(SInt(32.W))
+    //RV32F
+    val MEMWB_fpu_out       = Output(SInt(32.W))
   })
 
   io.MEMWB_memToReg_out     := RegNext(io.EXMEM_MEMTOREG)
@@ -26,4 +30,6 @@ class MEM_WB extends Module {
   io.MEMWB_rd_out           := RegNext(io.EXMEM_rd)
   io.MEMWB_dataMem_out      := RegNext(io.in_dataMem_out)
   io.MEMWB_alu_out          := RegNext(io.in_alu_out)
+  //RV32F
+  io.MEMWB_fpu_out          := RegNext(io.in_fpu_out)
 }
