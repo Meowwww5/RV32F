@@ -56,6 +56,7 @@ class FPU extends Module{
   val io = IO(new Bundle{
       val A_data_in = Input(UInt(32.W))
       val B_data_in = Input(UInt(32.W))
+      val C_data_in = Input(UInt(32.W))
       val COMP = Input(Bool())
       val fpu_Op = Input(UInt(5.W))
       val out = Output(UInt(32.W))
