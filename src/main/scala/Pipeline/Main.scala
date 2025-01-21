@@ -108,7 +108,7 @@ class PIPELINE extends Module {
 
     //RV32F reg END
     //RV32F reg write
-    when(control_module.io.FPU_en){
+    when(control_module.io.fpu_en){
       F_RegFile.io.reg_write := control_module.io.reg_write
     }
     otherwise{
@@ -121,31 +121,46 @@ class PIPELINE extends Module {
     // Structural hazard inputs
     Structural.io.rs1               := IF_ID_.io.SelectedInstr_out(19, 15)
     Structural.io.rs2               := IF_ID_.io.SelectedInstr_out(24, 20)
+    //RV32F rs3
+    Structural.io.rs3               := IF_ID_.io.SelectedInstr_out(31, 27)
+    //
     Structural.io.MEM_WB_regWr      := MEM_WB_M.io.EXMEM_REG_W
     Structural.io.MEM_WB_Rd         := MEM_WB_M.io.MEMWB_rd_out
    
     val S_rs1DataIn = Wire(SInt(32.W)) 
     val S_rs2DataIn = Wire(SInt(32.W))
-
+    //RV32F rs3
+    val S_rs3DataIn = Wire(SInt(32.W))
+    //RV32F datain
     //  rs1_data
     when (Structural.io.fwd_rs1 === 0.U) {
-      S_rs1DataIn := RegFile.io.rdata1
+      S_rs1DataIn := Mux(control_module.io.fpu_en, F_RegFile.io.rdata1, RegFile.io.rdata1)
     }.elsewhen (Structural.io.fwd_rs1 === 1.U) {
-      S_rs1DataIn := RegFile.io.w_data
+      S_rs1DataIn := Mux(control_module.io.fpu_en, F_RegFile.io.w_data, RegFile.io.w_data)
     }.otherwise {
       S_rs1DataIn := 0.S 
     }
     // rs2_data
     when (Structural.io.fwd_rs2 === 0.U) {
-      S_rs2DataIn := RegFile.io.rdata2
+      S_rs2DataIn := Mux(control_module.io.fpu_en, F_RegFile.io.rdata2, RegFile.io.rdata2)
     }.elsewhen (Structural.io.fwd_rs2 === 1.U) {
-      S_rs2DataIn := RegFile.io.w_data
+      S_rs2DataIn := Mux(control_module.io.fpu_en, F_RegFile.io.w_data, RegFile.io.w_data)
     }.otherwise {
       S_rs2DataIn := 0.S
+    }
+    // rs3_data
+    when (Structural.io.fwd_rs3 === 0.U) {
+      S_rs3DataIn := Mux(control_module.io.fpu_en, F_RegFile.io.rdata3, 0.S)
+    }.elsewhen (Structural.io.fwd_rs3 === 1.U) {
+      S_rs3DataIn := Mux(control_module.io.fpu_en, F_RegFile.io.w_data, 0.S)
+    }.otherwise {
+      S_rs3DataIn := 0.S
     }
     //ID_EX_ inputs
     ID_EX_.io.rs1_data_in        :=   S_rs1DataIn
     ID_EX_.io.rs2_data_in        :=   S_rs2DataIn
+    //RV32F
+    ID_EX_.io.rs3_data_in        :=   S_rs3DataIn
 
     // Stall when forward
     when(HazardDetect.io.ctrl_forward === "b1".U) {
@@ -157,7 +172,9 @@ class PIPELINE extends Module {
         ID_EX_.io.ctrl_OpB_in         := 0.U
         ID_EX_.io.ctrl_Branch_in      := 0.U
         ID_EX_.io.ctrl_nextpc_in      := 0.U
-    }.otherwise {
+        ID_EX_.io.ctrl_FPU_en_in      := 0.U
+        ID_EX_.io.ctrl_FPU_Op_in      := 0.U
+    }.otherwise {//**
         ID_EX_.io.ctrl_MemWr_in      := control_module.io.mem_write
         ID_EX_.io.ctrl_MemRd_in      := control_module.io.mem_read
         ID_EX_.io.ctrl_MemToReg_in   := control_module.io.men_to_reg
@@ -166,6 +183,11 @@ class PIPELINE extends Module {
         ID_EX_.io.ctrl_OpB_in        := control_module.io.operand_B
         ID_EX_.io.ctrl_Branch_in     := control_module.io.branch
         ID_EX_.io.ctrl_nextpc_in     := control_module.io.next_pc_sel
+        //RV32F
+        ID_EX_.io.ctrl_FPU_en_in     := control_module.io.fpu_en
+        ID_EX_.io.ctrl_FPU_Op_in     := control_module.io.fpu_operation
+        //RV32F opc
+        ID_EX_.io.ctrl_OpC_in        := control_module.io.operand_C
     }
     // Hazard detection Unit inputs
     HazardDetect.io.IF_ID_inst      := IF_ID_.io.SelectedInstr_out
@@ -258,22 +280,35 @@ class PIPELINE extends Module {
     }
     // ID_EX PIPELINE
     //RV32F, F_reg
-    ID_EX_.io.rs1_in := Mux(control_module.io.FPU_en, F_RegFile.io.F_rs1, RegFile.io.rs1)
-    ID_EX_.io.rs2_in := Mux(control_module.io.FPU_en, F_RegFile.io.F_rs2, RegFile.io.rs2)
-    ID_EX_.io.rs3_in := Mux(control_module.io.FPU_en, F_RegFile.io.F_rs3, 0.U)
+    ID_EX_.io.rs1_in := Mux(control_module.io.fpu_en, F_RegFile.io.F_rs1, RegFile.io.rs1)
+    ID_EX_.io.rs2_in := Mux(control_module.io.fpu_en, F_RegFile.io.F_rs2, RegFile.io.rs2)
+    ID_EX_.io.rs3_in := Mux(control_module.io.fpu_en, F_RegFile.io.F_rs3, 0.U)
     //ID_EX_.io.rs1_in            := RegFile.io.rs1
     //ID_EX_.io.rs2_in            := RegFile.io.rs2
     ID_EX_.io.imm               := ImmValue 
     ID_EX_.io.func3_in          := IF_ID_.io.SelectedInstr_out(14, 12)
     ID_EX_.io.func7_in          := IF_ID_.io.SelectedInstr_out(30)
     ID_EX_.io.rd_in             := IF_ID_.io.SelectedInstr_out(11, 7)
+    //RV32F, funct7 & fmt
+    ID_EX_.io.FPU_func7_in      := IF_ID_.io.SelectedInstr_out(31, 27)
+    ID_EX_.io.FPU_fmt_in        := IF_ID_.io.SelectedInstr_out(26, 25)
+    ID_EX_.io.FPU_op5_in        := IF_ID_.io.SelectedInstr_out(6, 2)
 //simulink
+
+    EX_MEM_M.io.IDEX_rd         := ID_EX_.io.rd_out
+    //FPU
+    when(ID_EX_.io.ctrl_FPU_en_out === 1.U){
+      FPU_Control.io.fpu_Op := ID_EX_.io.ctrl_FPU_Op_out
+      FPU_Control.io.fpu_funct3 := ID_EX_.io.func3_out
+      FPU_Control.io.fpu_funct7 := ID_EX_.io.FPU_func7_out
+      FPU.io.fpu_Op := FPU_Control.io.fpu_out
+      FPU_Control.io.fpu_enable := ID_EX_.io.ctrl_FPU_en_out
+    }.otherwise{
     ALU_Control.io.aluOp            := ID_EX_.io.ctrl_AluOp_out     // Alu op code
     ALU.io.alu_Op                   := ALU_Control.io.out           // Alu op code
     ALU_Control.io.func3            := ID_EX_.io.func3_out          // function 3
     ALU_Control.io.func7            := ID_EX_.io.func7_out          // function 7
-    EX_MEM_M.io.IDEX_rd             := ID_EX_.io.rd_out
-    
+    }
     // Forwarding Inputs
     Forwarding.io.IDEX_rs1        := ID_EX_.io.rs1_out
     Forwarding.io.IDEX_rs2        := ID_EX_.io.rs2_out
@@ -317,6 +352,8 @@ class PIPELINE extends Module {
     }.otherwise {
       ALU.io.in_B   := ID_EX_.io.imm_out
     }
+    //forwarding c for RV32F R4
+
   
 
     // Execute
@@ -325,7 +362,9 @@ class PIPELINE extends Module {
     EX_MEM_M.io.IDEX_MEMTOREG       := ID_EX_.io.ctrl_MemToReg_out
     EX_MEM_M.io.IDEX_REG_W          := ID_EX_.io.ctrl_Reg_W_out
     EX_MEM_M.io.IDEX_rs2            := RS2_value
+    //RV32F
     EX_MEM_M.io.alu_out             := ALU.io.out
+    EX_MEM_M.io.fpu_out             := FPU.io.fpu_out
   
     // Data memory inputs
     DataMemory.io.mem_read          := EX_MEM_M.io.EXMEM_memRd_out 
@@ -338,20 +377,39 @@ class PIPELINE extends Module {
     MEM_WB_M.io.EXMEM_rd            := EX_MEM_M.io.EXMEM_rd_out
     MEM_WB_M.io.in_dataMem_out      := DataMemory.io.dataOut        // data from Data Memory
     MEM_WB_M.io.in_alu_out          := EX_MEM_M.io.EXMEM_alu_out    // data from Alu Result
+    //RV32F
+    MEM_WB_M.io.EXMEM_fpu_out       := EX_MEM_M.io.EXMEM_fpu_out    // data from FPU Result
     
     // Register file connections
-    RegFile.io.w_reg                := MEM_WB_M.io.MEMWB_rd_out
-    RegFile.io.reg_write            := MEM_WB_M.io.MEMWB_reg_w_out
+    //RV32F
+    when(control_module.io.fpu_en){
+      F_RegFile.io.F_w_reg                := MEM_WB_M.io.MEMWB_rd_out
+      F_RegFile.io.F_reg_write            := MEM_WB_M.io.MEMWB_reg_w_out
+      //F_RegFile.io.w_reg := ID_EX_.io.rd_out
+    }.otherwise{
+      RegFile.io.w_reg                := MEM_WB_M.io.MEMWB_rd_out
+      RegFile.io.reg_write            := MEM_WB_M.io.MEMWB_reg_w_out
+    //RegFile.io.w_reg := ID_EX_.io.rd_out
+    }
+    
     
     // Write back data to registerfile writedata
     when (MEM_WB_M.io.MEMWB_memToReg_out === 0.U) {
-      d := MEM_WB_M.io.MEMWB_alu_out        // data from Alu Result
+      d := Mux(contrl.io.fpu_en, MEM_WB_M.io.MEMWB_fpu_out, MEM_WB_M.io.MEMWB_alu_out)        // data from Alu Result or FPU result
     }.elsewhen (MEM_WB_M.io.MEMWB_memToReg_out === 1.U) {
       d := MEM_WB_M.io.MEMWB_dataMem_out    // data from Data Memory
     }.otherwise {
       d := 0.S
     }
-    RegFile.io.w_data := d  // Write back data
+    //RV32F
+    when(contrl.io.fpu_en){
+//      F_RegFile.io.w_reg := MEM_WB_M.io.MEMWB_rd_out
+      F_RegFile.io.w_data := MEM_WB_M.io.MEMWB_fpu_out
+    }.otherwise{
+//      RegFile.io.w_reg := MEM_WB_M.io.MEMWB_rd_out
+      RegFile.io.w_data := d
+    }
+//    RegFile.io.w_data := d  // Write back data
   
     io.out := 0.S
 
