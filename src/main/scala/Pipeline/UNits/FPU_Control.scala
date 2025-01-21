@@ -8,7 +8,7 @@ class FPU_Control extends Module {
   val io = IO(new Bundle {
     val fpu_op = Input(UInt(5.W))
     val fpu_funct3 = Input(UInt(3.W))
-    val fpu_funct7 = Input(UInt(4.W)) //27~31 ?
+    val fpu_funct7 = Input(UInt(5.W)) //27~31
     val fpu_out = Output(UInt(5.W))
     val fpu_enable = Input(Bool())
     //?
@@ -19,13 +19,14 @@ class FPU_Control extends Module {
   when(io.fpu_enable) {
     //R type 
     when(io.fpu_op === 0.U) {
-      io.fpu_out := Cat(0.U(2.W), io.fpu_funct7, io.fpu_funct3)
+      io.fpu_out := io.fpu_funct7
 
     //R4 type
     //fmadd.s
     }.elsewhen(io.fpu_op === 1.U) {
-      io.fpu_out := Cat("b00".U(2.W), io.fpu_funct3)
+      io.fpu_out := io.fpu_op(4, 0)
     
+    //I & S not yet ready
     //I type
     }.elsewhen(io.fpu_op === 2.U) {
       io.fpu_out := Cat("b010".U(3.W), io.fpu_funct3)
