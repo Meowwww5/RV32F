@@ -13,7 +13,7 @@ class FPU_Control extends Module {
     val fpu_out    =  Output(UInt(5.W))
     val fpu_enable = Input(Bool())
     //?
-    val fpu_busy = Output(Bool())
+    //val fpu_busy = Output(Bool())
   })
 
   io.fpu_out := 0.U
@@ -38,20 +38,19 @@ class FPU_Control extends Module {
       io.fpu_out := 0.U
     }
   }
-  
+}  
 
   
   
   
 
   //?
-  val fpu_busy = RegInit(false.B)
-  when(io.fpu_enable) {
-    when(io.fpu_op =/= 0.U) {
-      fpu_busy := true.B
-    }.otherwise {
-      fpu_busy := false.B
-    }
-  }
-  io.fpu_busy := fpu_busy
-}
+  // val fpu_busy = RegInit(false.B)
+  // when(io.fpu_enable) {
+  //   when(io.fpu_op =/= 0.U) {
+  //     fpu_busy := true.B
+  //   }.otherwise {
+  //     fpu_busy := false.B
+  //   }
+  // }
+  // io.fpu_busy := fpu_busy
