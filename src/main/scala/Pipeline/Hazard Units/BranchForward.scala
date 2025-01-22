@@ -17,6 +17,10 @@ class BranchForward extends Module {
 
     val forward_rs1 = Output(UInt(4.W))
     val forward_rs2 = Output(UInt(4.W))
+
+    // RV32F rs3 ??
+    // val rs3         = Input(UInt(5.W))
+    // val forward_rs3 = Output(UInt(4.W))
   })
   io.forward_rs1 := "b0000".U
   io.forward_rs2 := "b0000".U
