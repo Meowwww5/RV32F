@@ -174,6 +174,7 @@ class PIPELINE extends Module {
         ID_EX_.io.ctrl_nextpc_in      := 0.U
         ID_EX_.io.ctrl_FPU_en_in      := 0.U
         ID_EX_.io.ctrl_FPU_Op_in      := 0.U
+        ID_EX_.io.ctrl_OpC_in         := 0.U
     }.otherwise {//**
         ID_EX_.io.ctrl_MemWr_in      := control_module.io.mem_write
         ID_EX_.io.ctrl_MemRd_in      := control_module.io.mem_read
@@ -208,6 +209,8 @@ class PIPELINE extends Module {
     Branch_Forward.io.rs1           := IF_ID_.io.SelectedInstr_out(19, 15)
     Branch_Forward.io.rs2           := IF_ID_.io.SelectedInstr_out(24, 20)
     Branch_Forward.io.ctrl_branch   := control_module.io.branch
+    
+    //Branch: for SB-type, no add for RV32F
     // Branch X
     Branch_M.io.arg_x := MuxLookup (Branch_Forward.io.forward_rs1, 0.S, Array (
         (0.U) -> RegFile.io.rdata1,
@@ -221,7 +224,15 @@ class PIPELINE extends Module {
         (8.U) -> RegFile.io.rdata1,
         (9.U) -> RegFile.io.rdata1,
         (10.U) -> RegFile.io.rdata1))
-    
+    // Branch Y
+    Branch_M.io.arg_y := MuxLookup (Branch_Forward.io.forward_rs2, 0.S, Array (
+        (0.U) -> RegFile.io.rdata2,
+        (1.U) -> ALU.io.out, 
+        (2.U) -> EX_MEM_M.io.EXMEM_alu_out, 
+        (3.U) -> RegFile.io.w_data, 
+        (4.U) -> DataMemory.io.dataOut, 
+        (5.U) -> RegFile.io.w_data))
+
     // for JALR
     JALR.io.rdata1 := MuxLookup (Branch_Forward.io.forward_rs1, 0.U, Array (
         (0.U) -> RegFile.io.rdata1.asUInt,
@@ -237,15 +248,7 @@ class PIPELINE extends Module {
         (10.U) -> RegFile.io.w_data.asUInt))
     
     JALR.io.imme := ImmValue.asUInt
-    // Branch Y
-    Branch_M.io.arg_y := MuxLookup (Branch_Forward.io.forward_rs2, 0.S, Array (
-        (0.U) -> RegFile.io.rdata2,
-        (1.U) -> ALU.io.out, 
-        (2.U) -> EX_MEM_M.io.EXMEM_alu_out, 
-        (3.U) -> RegFile.io.w_data, 
-        (4.U) -> DataMemory.io.dataOut, 
-        (5.U) -> RegFile.io.w_data))
-    
+    //JALR end    
     Branch_M.io.fnct3 := IF_ID_.io.SelectedInstr_out(14, 12)      // Fun3 for(beq,bne....)
     Branch_M.io.branch := control_module.io.branch              // Branch instr yes
     
@@ -315,56 +318,112 @@ class PIPELINE extends Module {
     Forwarding.io.EXMEM_regWr     := EX_MEM_M.io.EXMEM_reg_w_out
     Forwarding.io.MEMWB_rd        := MEM_WB_M.io.MEMWB_rd_out
     Forwarding.io.MEMWB_regWr     := MEM_WB_M.io.MEMWB_reg_w_out
+    //RV32F rs3
+    Forwarding.io.IDEX_rs3        := ID_EX_.io.rs3_out
     
     ID_EX_.io.ctrl_OpA_in := control_module.io.operand_A    // Operand A selection
     ID_EX_.io.IFID_pc4_in := IF_ID_.io.pc4_out      // pc+4 from Decode to execute
     
     val d = Wire(SInt(32.W))
-    //RV32F rs1~rs3 forwarding
+
     when (ID_EX_.io.ctrl_OpA_out === "b01".U) {
-      ALU.io.in_A := ID_EX_.io.IFID_pc4_out.asSInt
+        ALU.io.in_A := ID_EX_.io.IFID_pc4_out.asSInt
+    }.elsewhen (ID_EX_.io.ctrl_FPU_en_out === 1.U) { //RV32F rs1 data
+        FPU.io.A_data_in := MuxLookup(Forwarding.io.forward_a, 0.U, Array(
+            (0.U) -> ID_EX_.io.rs1_data_out,
+            (1.U) -> d,
+            (2.U) -> EX_MEM_M.io.EXMEM_fpu_out,
+            (3.U) -> ID_EX_.io.rs1_data_out
+        ))
     }.otherwise {
         // forwarding A
         when(Forwarding.io.forward_a === "b00".U) {
             ALU.io.in_A := ID_EX_.io.rs1_data_out
-        }.elsewhen(Forwarding.io.forward_a === "b01".U && ID_EX_.io.ctrl_FPU_en_out === 0.U) {
+        }.elsewhen(Forwarding.io.forward_a === "b01".U) {
             ALU.io.in_A := d
-        }.elsewhen(Forwarding.io.forward_a === "b01".U && ID_EX_.io.ctrl_FPU_en_out === 1.U) {
-            FPU.io.in_A := d
         }.elsewhen(Forwarding.io.forward_a === "b10".U) {
             ALU.io.in_A := EX_MEM_M.io.EXMEM_alu_out
-            FPU.io.in_A := EX_MEM_M.io.EXMEM_fpu_out //?
         }.otherwise {
             ALU.io.in_A := ID_EX_.io.rs1_data_out
         }
       }
-    // forwarding B
+    
+    
+    // when (ID_EX_.io.ctrl_OpA_out === "b01".U) {
+    //   ALU.io.in_A := ID_EX_.io.IFID_pc4_out.asSInt
+    // }.elsewhen (ID_EX_.io.ctrl_FPU_en_out === 1.U){
+    //   switch(Forwarding.io.forward_a){
+    //     is("b00".U){
+    //       FPU.io.A_data_in := ID_EX_.io.rs1_data_out
+    //     }
+    //     is("b01".U){
+    //       FPU.io.A_data_in := d
+    //     }
+    //     is("b10".U){
+    //       FPU.io.A_data_in := EX_MEM_M.io.EXMEM_fpu_out
+    //     }
+    //     is("b11".U){
+    //       FPU.io.A_data_in := ID_EX_.io.rs1_data_out
+    //     }
+    //   }
+    // }.otherwise {
+    //     // forwarding A
+    //     when(Forwarding.io.forward_a === "b00".U) {
+    //         ALU.io.in_A := ID_EX_.io.rs1_data_out
+    //     }.elsewhen(Forwarding.io.forward_a === "b01".U && ID_EX_.io.ctrl_FPU_en_out === 0.U) {
+    //         ALU.io.in_A := d
+    //     }.elsewhen(Forwarding.io.forward_a === "b01".U && ID_EX_.io.ctrl_FPU_en_out === 1.U) {
+    //         FPU.io.in_A := d
+    //     }.elsewhen(Forwarding.io.forward_a === "b10".U) {
+    //         ALU.io.in_A := EX_MEM_M.io.EXMEM_alu_out
+    //         FPU.io.in_A := EX_MEM_M.io.EXMEM_fpu_out //?
+    //     }.otherwise {
+    //         ALU.io.in_A := ID_EX_.io.rs1_data_out
+    //     }
+    //   }
+    // forwarding B    
     val RS2_value = Wire(SInt(32.W)) 
     when (Forwarding.io.forward_b === 0.U) {
       RS2_value := ID_EX_.io.rs2_data_out
     }.elsewhen (Forwarding.io.forward_b === 1.U) {
       RS2_value := d
-    }.elsewhen (Forwarding.io.forward_b === 2.U && ID_EX_.io.ctrl_FPU_en_out === 0.U) {
-      RS2_value := EX_MEM_M.io.EXMEM_alu_out
-    }.elsewhen (Forwarding.io.forward_b === 2.U && ID_EX_.io.ctrl_FPU_en_out === 1.U) {
-      RS2_value := EX_MEM_M.io.EXMEM_fpu_out
+    }.elsewhen (Forwarding.io.forward_b === 2.U) {
+      RS2_value := Mux(ID_EX_.io.ctrl_FPU_en_out, EX_MEM_M.io.EXMEM_fpu_out, EX_MEM_M.io.EXMEM_alu_out)
     }.otherwise {
       RS2_value := 0.S
     }
 
-    when (ID_EX_.io.ctrl_OpB_out === 0.U) {
-      when(ID_EX_.io.ctrl_FPU_en_out === 0.U){
-        ALU.io.in_B := ID_EX_.io.rs2_data_out
-      }.otherwise{
-        FPU.io.in_B := ID_EX_.io.rs2_data_out
-      }
-    }.otherwise {
-      when(ID_EX_.io.ctrl_FPU_en_out === 0.U){
-        ALU.io.in_B := ID_EX_.io.imm_out
-      }.otherwise{
-        FPU.io.in_B := ID_EX_.io.imm_out
-      }
+    when(ID_EX_.io.ctrl_FPU_en_out === 1.U){
+      FPU.io.B_data_in := Mux(ID_EX_.io.ctrl_OpB_out, ID_EX_.io.imm_out, RS2_value)
+    }.otherwise{
+      ALU.io.in_B := Mux(ID_EX_.io.ctrl_OpB_out, ID_EX_.io.imm_out, RS2_value)
     }
+  
+    // when (Forwarding.io.forward_b === 0.U) {
+    //   RS2_value := ID_EX_.io.rs2_data_out
+    // }.elsewhen (Forwarding.io.forward_b === 1.U) {
+    //   RS2_value := d
+    // }.elsewhen (Forwarding.io.forward_b === 2.U && ID_EX_.io.ctrl_FPU_en_out === 0.U) {
+    //   RS2_value := EX_MEM_M.io.EXMEM_alu_out
+    // }.elsewhen (Forwarding.io.forward_b === 2.U && ID_EX_.io.ctrl_FPU_en_out === 1.U) {
+    //   RS2_value := EX_MEM_M.io.EXMEM_fpu_out
+    // }.otherwise {
+    //   RS2_value := 0.S
+    // }
+
+    // when (ID_EX_.io.ctrl_OpB_out === 0.U) {
+    //   when(ID_EX_.io.ctrl_FPU_en_out === 0.U){
+    //     ALU.io.in_B := ID_EX_.io.rs2_data_out
+    //   }.otherwise{
+    //     FPU.io.in_B := ID_EX_.io.rs2_data_out
+    //   }
+    // }.otherwise {
+    //   when(ID_EX_.io.ctrl_FPU_en_out === 0.U){
+    //     ALU.io.in_B := ID_EX_.io.imm_out
+    //   }.otherwise{
+    //     FPU.io.in_B := ID_EX_.io.imm_out
+    //   }
+    // }
 
     //forwarding c for RV32F R4
     val RS3_value = Wire(SInt(32.W))
@@ -377,12 +436,8 @@ class PIPELINE extends Module {
     }.otherwise {
       RS3_value := 0.S
     }
-    when (ID_EX_.io.ctrl_OpC_out === 0.U) {
-      FPU.io.C_data_in:= RS3_value
-    }.otherwise {
-      FPU.io.C_data_in := 0.S
-    }
-  
+
+    FPU.io.C_data_in := Mux(ID_EX_.io.ctrl_OpC_out, RS3_value, 0.S)
 
     // Execute
     EX_MEM_M.io.IDEX_MEMRD          := ID_EX_.io.ctrl_MemRd_out 
