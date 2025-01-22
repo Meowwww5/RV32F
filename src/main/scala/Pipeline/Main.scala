@@ -465,7 +465,7 @@ class PIPELINE extends Module {
     
     // Register file connections
     //RV32F
-    when(control_module.io.fpu_en){
+    when(ID_EX_.io.ctrl_FPU_en_out === 1.U){
       F_RegFile.io.F_w_reg                := MEM_WB_M.io.MEMWB_rd_out
       F_RegFile.io.F_reg_write            := MEM_WB_M.io.MEMWB_reg_w_out
       //F_RegFile.io.w_reg := ID_EX_.io.rd_out
