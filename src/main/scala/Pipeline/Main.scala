@@ -487,7 +487,7 @@ class PIPELINE extends Module {
     //RV32F
     when(MEM_WB_M.io.MEMWB_fp_en){
 //      F_RegFile.io.w_reg := MEM_WB_M.io.MEMWB_rd_out
-      F_RegFile.io.w_data := MEM_WB_M.io.MEMWB_fpu_out
+      F_RegFile.io.w_data := d
     }.otherwise{
 //      RegFile.io.w_reg := MEM_WB_M.io.MEMWB_rd_out
       RegFile.io.w_data := d
