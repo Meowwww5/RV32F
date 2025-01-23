@@ -56,8 +56,7 @@ class FPU extends Module{
   val io = IO(new Bundle{
       val A_data_in = Input(UInt(32.W))
       val B_data_in = Input(UInt(32.W))
-      val C_data_in = Input(UInt(32.W))
-      val COMP = Input(Bool())
+      val C_data_in = Input(UInt(32.W))      
       val fpu_Op = Input(UInt(5.W))
       val rm = Input(UInt(3.W))
       val rs2 = Input(UInt(5.W))
@@ -68,6 +67,7 @@ class FPU extends Module{
   val COMP_0  =   Module(new FP_COMP)
   val COMP_16 =   Module(new FP_COMP)
   val COMP_20 =   Module(new FP_COMP)
+  val COMP_21 =   Module(new FP_COMP)
 
   //reg type or wire type?
   val result = 0.U(32.W)
@@ -89,6 +89,9 @@ class FPU extends Module{
   val Temp_Exp = 0.U(24.W)
   val Temp_Mantissa = 0.U(24.W)
   val B_shift_mantissa = 0.U(24.W)
+  val COMP = 0.U(1.W)
+  val COMP_20_ = 0.U(1.W)
+  val COMP_21_ = 0.U(1.W)
 
   //comparator
   COMP_0.io.rs1 := io.A_data_in
@@ -398,6 +401,24 @@ class FPU extends Module{
     }
     is(FPU_FEQ_S, FPU_FLT_S, FPU_FLE_S) {
       //result := Mux(io.in_A === io.in_B, 1.U, 0.U)
+      COMP_20.io.rs1 := io.A_data_in
+      COMP_20.io.rs2 := io.B_data_in
+      COMP_20_ := COMP_20.io.COMP_RESULT
+      COMP_21.io.rs1 := io.B_data_in
+      COMP_21.io.rs2 := io.A_data_in
+      COMP_21_ := COMP_21.io.COMP_RESULT
+      switch(io.rm) {
+        is(0.U) {
+          result := Mux((COMP_20_ && COMP_21_), 1.U, 0.U) //A>=B && B>=A -> A=B
+        }
+        is(1.U) {
+          result := Mux(COMP_20_, 0.U, 1.U) //A>=B -> A>B
+        }
+        is(2.U) {
+          result := Mux(COMP_21_, 0.U, 1.U) //B>=A -> A<=B
+        }
+      }
+
     }
     is(FPU_FCVT_W_S) {
       //result := io.in_A.asSInt
