@@ -296,6 +296,7 @@ class PIPELINE extends Module {
     ID_EX_.io.FPU_func7_in      := IF_ID_.io.SelectedInstr_out(31, 27)
     ID_EX_.io.FPU_fmt_in        := IF_ID_.io.SelectedInstr_out(26, 25)
     ID_EX_.io.FPU_op5_in        := IF_ID_.io.SelectedInstr_out(6, 2)
+    ID_EX_.io.FPU_rm_in         := IF_ID_.io.SelectedInstr_out(14, 12)
 
     EX_MEM_M.io.IDEX_rd         := ID_EX_.io.rd_out
     //FPU
