@@ -196,7 +196,7 @@ class PIPELINE extends Module {
     HazardDetect.io.ID_EX_rd        := ID_EX_.io.rd_out
     HazardDetect.io.pc_in           := IF_ID_.io.pc4_out.asSInt
     HazardDetect.io.current_pc      := IF_ID_.io.SelectedPC_out
-    
+    HazardDetect.io.ID_EX_operandC  := ID_EX_.io.ctrl_OpC_out
     MEM_WB_M.io.EXMEM_MEMRD         := EX_MEM_M.io.EXMEM_memRd_out      // 0/ 1: data read from memory 
     
     // Branch forward Unit inputs
