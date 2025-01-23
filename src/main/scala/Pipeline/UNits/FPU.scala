@@ -72,10 +72,13 @@ class FPU extends Module{
 
   val A_sign = 0.U(1.W)
   val B_sign = 0.U(1.W)
+  val C_sign = 0.U(1.W)
   val A_exp = 0.U(1.W)
   val B_exp = 0.U(1.W)
+  val C_exp = 0.U(1.W)
   val A_Mantissa = 0.U(24.W)
   val B_Mantissa = 0.U(24.W)
+  val C_Mantissa = 0.U(24.U)
   val Temp_Exp = 0.U(24.W)
   val Temp_Mantissa = 0.U(24.W)
   val B_shift_mantissa = 0.U(24.W)
@@ -172,7 +175,7 @@ class FPU extends Module{
       // multiply the mantissa
       val Mantissa_product = A_Mantissa * B_Mantissa
       // normalize
-      val carry = Mantissa_product(47)
+      carry = Mantissa_product(47)
       val normalized_Mantissa = Mux(carry, Mantissa_product(46, 24), Mantissa_product(45, 23))
       val normalized_exp = Mux(carry, exp_sum + 1.U, exp_sum)
 
@@ -257,30 +260,30 @@ class FPU extends Module{
       val x0 = "b01000000000000000000000000000000".U(32.W) // x0 assumption = 1
       val iter1 = (x0 + (1.U << 23) - ((B_Mantissa << 23) / x0)) >> 1
       val iter2 = (iter1 + (1.U << 23) - ((B_Mantissa << 23) / iter1)) >> 1
-      val reciprocal = iter2(45, 23) // 提取尾數高位作為 1 / B_Mantissa 的結果
+      val iter3 = (iter2 + (1.U << 23) - ((B_Mantissa << 23) / iter2)) >> 1
+      val reciprocal = iter3(45, 23) 
 
-      // 最終尾數計算 A_Mantissa / B_Mantissa = A_Mantissa * reciprocal
+      // calculate mantissa A_Mantissa / B_Mantissa = A_Mantissa * reciprocal
       val Mantissa_div = A_Mantissa * reciprocal
 
-      // 5. 歸一化
-      val carry = Mantissa_div(47)
+      // normalize
+      carry = Mantissa_div(47)
       val normalized_Mantissa = Mux(carry, Mantissa_div(46, 24), Mantissa_div(45, 23))
       val normalized_exp = Mux(carry, exp_diff + 1.U, exp_diff)
 
-      // 6. 特殊情況處理
       when(B_swap(30, 0) === 0.U) {
-        // 零除返回 NaN
-        result := "b01111111100000000000000000000000".U
+        // B=0:NaN
+        result := "b01111111100000000000000000000000".U // NaN
       } .elsewhen(A_swap(30, 0) === 0.U) {
-        // A 為零，結果為零
+        // A=0:0
         result := 0.U
       } .elsewhen(normalized_exp >= 255.U) {
-        // 指數溢出，結果為 Infinity
+        // exponent overflow:exp=infinity, mantissa=0
         result_exp := 255.U
         result_frac := 0.U
         result := Cat(result_sign, result_exp, result_frac)
       } .elsewhen(normalized_exp <= 0.U) {
-        // 非規範化數
+        // subnormal:exp=0, mantissa right shift
         result_exp := 0.U
         result_frac := normalized_Mantissa >> (1.U - normalized_exp)
         result := Cat(result_sign, result_exp, result_frac)
@@ -293,7 +296,83 @@ class FPU extends Module{
       }
     }
 
+    is(FPU_FMADD_S) {
+      // extract the sign bit, exponent, and mantissa
+      A_sign := io.A_data_in(31)
+      B_sign := io.B_data_in(31)
+      C_sign := io.C_data_in(31)
+      A_exp := io.A_data_in(30, 23)
+      B_exp := io.B_data_in(30, 23)
+      C_exp := io.C_data_in(30, 23)
+      A_Mantissa := Cat(1.U(1.W), io.A_data_in(22, 0))
+      B_Mantissa := Cat(1.U(1.W), io.B_data_in(22, 0))
+      C_Mantissa := Cat(1.U(1.W), io.C_data_in(22, 0))
 
+      // calculate A*B
+      val mul_sign = A_sign ^ B_sign
+      val mul_exp = A_exp + B_exp - 127.U
+      val mul_Mantissa = A_Mantissa * B_Mantissa
+
+      // normalize_A*B
+      val mul_carry = mul_Mantissa(47)
+      val mul_norm_Mantissa = Mux(mul_carry, mul_Mantissa(46, 24), mul_Mantissa(45, 23))
+      val mul_norm_exp = Mux(mul_carry, mul_exp + 1.U, mul_exp)
+
+      // comparator_A*B vs C
+      FP_COMP.io.rs1 := mul_norm_Mantissa
+      FP_COMP.io.rs2 := C_Mantissa
+      COMP := FP_COMP.io.COMP_RESULT
+
+      // alogned number
+      val exp_diff = (mul_norm_exp - C_exp).asSInt()
+      val safe_shift = Mux(exp_diff < 0.S, -exp_diff.asUInt, exp_diff.asUInt)
+      val aligned_Mul_Mantissa = Mux(COMP, mul_norm_Mantissa, mul_norm_Mantissa >> safe_shift)
+      val aligned_C_Mantissa = Mux(COMP, C_Mantissa >> safe_shift, C_Mantissa)
+      val aligned_exp = Mux(COMP, mul_norm_exp, C_exp)
+      
+      // val exp_diff = mul_norm_exp - C_exp
+      // val aligned_Mul_Mantissa = Mux(COMP, mul_norm_Mantissa, mul_norm_Mantissa >> exp_diff)
+      // val aligned_C_Mantissa = Mux(COMP, C_Mantissa >> exp_diff, C_Mantissa)
+      // val aligned_exp = Mux(COMP, mul_norm_exp, C_exp)
+
+      // ADD & SUB result
+      val add_sub_result = Mux(mul_sign === C_sign,
+        aligned_Mul_Mantissa + aligned_C_Mantissa,
+        aligned_Mul_Mantissa - aligned_C_Mantissa
+      )
+      val add_sub_sign = Mux(aligned_Mul_Mantissa >= aligned_C_Mantissa, mul_sign, C_sign)
+
+      // normalize result
+      val result_carry = add_sub_result(24)
+      val norm_result_Mantissa = Mux(result_carry, add_sub_result(23, 1), add_sub_result(22, 0))
+      val norm_result_exp = Mux(result_carry, aligned_exp + 1.U, aligned_exp)
+
+      // special cases
+        // Handle NaN and infinity
+      when((A_exp === 255.U && A_Mantissa =/= 0.U) ||
+          (B_exp === 255.U && B_Mantissa =/= 0.U) ||
+          (C_exp === 255.U && C_Mantissa =/= 0.U)) {
+        // NaN
+        result := "b0111111111000000000000000000000".U(32.W) // Standard NaN
+      }
+      when(io.A_data_in(30, 0) === 0.U || io.B_data_in(30, 0) === 0.U) {
+        // A or B=0
+        result := io.C_data_in
+      } .elsewhen(io.C_data_in(30, 0) === 0.U) {
+        // C=0
+        result := Cat(mul_sign, mul_norm_exp, mul_norm_Mantissa(22, 0))
+      } .elsewhen(norm_result_exp >= 255.U) {
+        // overflow
+        result := Cat(add_sub_sign, "b11111111".U(8.W), 0.U(23.W))
+      } .elsewhen(norm_result_exp <= 0.U) {
+        // subnormal
+        val subnormal_Mantissa = norm_result_Mantissa >> (1.U - norm_result_exp)
+        result := Cat(add_sub_sign, 0.U(8.W), subnormal_Mantissa(22, 0))
+      } .otherwise {
+        // normal result
+        result := Cat(add_sub_sign, norm_result_exp, norm_result_Mantissa(22, 0))
+      }
+    }
 
     is(FPU_FSGNJ_S) {
       //result := Cat(io.in_A(31), io.in_B(30, 0))
