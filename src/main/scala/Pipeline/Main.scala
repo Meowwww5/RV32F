@@ -453,7 +453,7 @@ class PIPELINE extends Module {
     DataMemory.io.mem_read          := EX_MEM_M.io.EXMEM_memRd_out 
     DataMemory.io.mem_write         := EX_MEM_M.io.EXMEM_memWr_out
     DataMemory.io.dataIn            := EX_MEM_M.io.EXMEM_rs2_out
-    DataMemory.io.addr              := EX_MEM_M.io.EXMEM_alu_out.asUInt
+    DataMemory.io.addr              := Mux(EX_MEM_M.io.fp_en === 0.U, EX_MEM_M.io.EXMEM_alu_out.asUInt, EX_MEM_M.io.EXMEM_fpu_out.asUInt)
 
     MEM_WB_M.io.EXMEM_MEMTOREG      := EX_MEM_M.io.EXMEM_memToReg_out
     MEM_WB_M.io.EXMEM_REG_W         := EX_MEM_M.io.EXMEM_reg_w_out
