@@ -413,7 +413,7 @@ class FPU extends Module{
           result := Mux((COMP_20_ && COMP_21_), 1.U, 0.U) //A>=B && B>=A -> A=B
         }
         is(1.U) {
-          result := Mux(COMP_20_, 0.U, 1.U) //A>=B -> A>B
+          result := Mux(COMP_20_, 0.U, 1.U) //!A>=B -> A<B
         }
         is(2.U) {
           result := Mux(COMP_21_, 0.U, 1.U) //B>=A -> A<=B
