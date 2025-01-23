@@ -14,6 +14,7 @@ class EX_MEM extends Module {
     val alu_out             =   Input(SInt(32.W))
     //RV32F
     val fpu_out             =   Input(SInt(32.W))
+    val IDEX_fp_en          =   Input(bool)
 
     val EXMEM_memRd_out     = Output(Bool())
     val EXMEM_memWr_out     = Output(Bool())
@@ -24,6 +25,7 @@ class EX_MEM extends Module {
     val EXMEM_alu_out       = Output(SInt(32.W))
     //RV32F
     val EXMEM_fpu_out       = Output(SInt(32.W))
+    val EXMEM_fp_en         = Output(bool)
     })
   
     io.EXMEM_memRd_out      := RegNext(io.IDEX_MEMRD)
@@ -35,4 +37,5 @@ class EX_MEM extends Module {
     io.EXMEM_alu_out        := RegNext(io.alu_out)
     //RV32F
     io.EXMEM_fpu_out        := RegNext(io.fpu_out)
+    io.EXMEM_fp_en          := RegNext(io.IDEX_fp_en)
 }
