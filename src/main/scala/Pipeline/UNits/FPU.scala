@@ -60,6 +60,7 @@ class FPU extends Module{
       val fpu_Op = Input(UInt(5.W))
       val rm = Input(UInt(3.W))
       val rs2 = Input(UInt(5.W))
+      val fmt = Input(UInt(2.W))
       val out = Output(UInt(32.W))
   })
 
