@@ -478,7 +478,7 @@ class PIPELINE extends Module {
     
     // Write back data to registerfile writedata
     when (MEM_WB_M.io.MEMWB_memToReg_out === 0.U) {
-      d := Mux(contrl.io.fpu_en, MEM_WB_M.io.MEMWB_fpu_out, MEM_WB_M.io.MEMWB_alu_out)        // data from Alu Result or FPU result
+      d := Mux(MEM_WB_M.io.MEMWB_fp_en, MEM_WB_M.io.MEMWB_fpu_out, MEM_WB_M.io.MEMWB_alu_out)        // data from Alu Result or FPU result
     }.elsewhen (MEM_WB_M.io.MEMWB_memToReg_out === 1.U) {
       d := MEM_WB_M.io.MEMWB_dataMem_out    // data from Data Memory
     }.otherwise {
