@@ -304,6 +304,8 @@ class PIPELINE extends Module {
       FPU_Control.io.fpu_funct3 := ID_EX_.io.func3_out
       FPU_Control.io.fpu_funct7 := ID_EX_.io.FPU_func7_out
       FPU.io.fpu_Op := FPU_Control.io.fpu_out
+      FPU.io.fmt := ID_EX_.io.FPU_fmt_out
+      FPU.io.rm := ID_EX_.io.FPU_rm_out
       FPU_Control.io.fpu_enable := ID_EX_.io.ctrl_FPU_en_out
     }.otherwise{
     ALU_Control.io.aluOp            := ID_EX_.io.ctrl_AluOp_out     // Alu op code
