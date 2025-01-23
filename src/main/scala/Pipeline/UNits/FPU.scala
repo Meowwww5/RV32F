@@ -59,6 +59,8 @@ class FPU extends Module{
       val C_data_in = Input(UInt(32.W))
       val COMP = Input(Bool())
       val fpu_Op = Input(UInt(5.W))
+      val rm = Input(UInt(3.W))
+      val rs2 = Input(UInt(5.W))
       val out = Output(UInt(32.W))
   })
 
@@ -389,14 +391,8 @@ class FPU extends Module{
     is(FPU_FMAX_S) {
       //result := Mux(io.in_A > io.in_B, io.in_A, io.in_B)
     }
-    is(FPU_FEQ_S) {
+    is(FPU_FEQ_S, FPU_FLT_S, FPU_FLE_S) {
       //result := Mux(io.in_A === io.in_B, 1.U, 0.U)
-    }
-    is(FPU_FLT_S) {
-      //result := Mux(io.in_A < io.in_B, 1.U, 0.U)
-    }
-    is(FPU_FLE_S) {
-      //result := Mux(io.in_A <= io.in_B, 1.U, 0.U)
     }
     is(FPU_FCVT_W_S) {
       //result := io.in_A.asSInt
