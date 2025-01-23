@@ -64,6 +64,11 @@ class FPU extends Module{
       val out = Output(UInt(32.W))
   })
 
+  val NAN_exp = "b11111111".U(8.W)
+  val COMP_0  =   Module(new FP_COMP)
+  val COMP_16 =   Module(new FP_COMP)
+  val COMP_20 =   Module(new FP_COMP)
+
   //reg type or wire type?
   val result = 0.U(32.W)
   val result_sign = 0.U(1.W)
@@ -86,9 +91,9 @@ class FPU extends Module{
   val B_shift_mantissa = 0.U(24.W)
 
   //comparator
-  FP_COMP.io.rs1 := io.A_data_in
-  FP_COMP.io.rs2 := io.B_data_in
-  COMP := FP_COMP.io.COMP_RESULT  
+  COMP_0.io.rs1 := io.A_data_in
+  COMP_0.io.rs2 := io.B_data_in
+  COMP := COMP_0.io.COMP_RESULT  
 
   val A_swap = COMP ? io.A_data_in : io.B_data_in
   val B_swap = COMP ? io.B_data_in : io.A_data_in
@@ -321,9 +326,9 @@ class FPU extends Module{
       val mul_norm_exp = Mux(mul_carry, mul_exp + 1.U, mul_exp)
 
       // comparator_A*B vs C
-      FP_COMP.io.rs1 := mul_norm_Mantissa
-      FP_COMP.io.rs2 := C_Mantissa
-      COMP := FP_COMP.io.COMP_RESULT
+      COMP_16.io.rs1 := mul_norm_Mantissa
+      COMP_16.io.rs2 := C_Mantissa
+      COMP := COMP_16.io.COMP_RESULT
 
       // alogned number
       val exp_diff = (mul_norm_exp - C_exp).asSInt()
