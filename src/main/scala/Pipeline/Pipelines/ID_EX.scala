@@ -26,6 +26,7 @@ class ID_EX extends Module {
     val FPU_func7_in        = Input(UInt(5.W))
     val FPU_fmt_in          = Input(UInt(2.W))
     val FPU_op5_in          = Input(UInt(5.W))
+    val FPU_rm_in           = Input(UInt(3.W))
     //
     val ctrl_OpA_in         = Input(UInt(2.W))
     val ctrl_OpB_in         = Input(Bool())
@@ -57,6 +58,7 @@ class ID_EX extends Module {
     val FPU_func7_out       = Output(UInt(5.W))
     val FPU_fmt_out         = Output(UInt(2.W))
     val FPU_op5_out         = Output(UInt(5.W))
+    val FPU_rm_out          = Output(UInt(3.W))
     //
     val ctrl_OpA_out        = Output(UInt(2.W))
     val ctrl_OpB_out        = Output(Bool())
@@ -89,6 +91,7 @@ class ID_EX extends Module {
   io.FPU_func7_out      :=  RegNext(io.FPU_func7_in)
   io.FPU_fmt_out        :=  RegNext(io.FPU_fmt_in)
   io.FPU_op5_out        :=  RegNext(io.FPU_op5_in)
+  io.FPU_rm_out         :=  RegNext(io.FPU_rm_in)
   //
   io.ctrl_OpA_out       :=  RegNext(io.ctrl_OpA_in)
   io.ctrl_OpB_out       :=  RegNext(io.ctrl_OpB_in)
